@@ -70,7 +70,7 @@ def generate_train_vectors_with_negative_samples(train_data, vocab, window_size=
         # need to allow replacement, otherwise we never get the same thing twice
         p = np.array(all_freqs) ** 0.75
         p = p / p.sum()
-        return np.random.choice(all_words, p=all_freqs, replace=True, size=(bsize,n_negatives))
+        return np.random.choice(all_words, p=p, replace=True, size=(bsize,n_negatives))
     
     for i in range(len(train_data)):
         if i + 2 * window_size >= len(train_data):
