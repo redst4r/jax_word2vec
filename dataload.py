@@ -112,10 +112,14 @@ import collections
 
 
 class Loader:
-    def __init__(self, train_data, vocab):
+    def __init__(self, train_data, vocab, shuffle=True):
+        """
+        :param shuffle: randomly shufle the samples in a minibatch?
+        """
         self.train_data = train_data,
         self.vocab = vocab
         self.train_data_ids = [vocab.get(w, 0) for w in train_data]
+        self.shuffle = shuffle
 
     def get_iterator(self, window_size, batch_size):
         target_batch = np.zeros(batch_size, dtype=np.int32)
@@ -136,17 +140,30 @@ class Loader:
     
             batch_idx += 1
             if batch_idx == batch_size:
-                yield np.array(target_batch), np.array(context_batch)
+
+                target_batch = np.array(target_batch) 
+                context_batch = np.array(context_batch)
+                if self.shuffle:
+                    # Shuffle the batch.
+                    indices = np.random.permutation(len(target_batch))
+                    target_batch = target_batch[indices]
+                    context_batch = context_batch[indices]
+                
+                yield target_batch, context_batch
                 batch_idx = 0
 
 
 
 class Loader_Negative:
-    def __init__(self, train_data, vocab):
+    def __init__(self, train_data, vocab, shuffle=True):
+        """
+        :param shuffle: randomly shufle the samples in a minibatch?
+        """
         self.train_data = train_data,
         self.vocab = vocab
         self.train_data_ids = [vocab.get(w, 0) for w in train_data]
-
+        self.shuffle = shuffle
+        
         # some prep for neg sampling
         all_words = np.array(list(set(vocab.values()) )) # to keep track of the negative samples
 
@@ -204,10 +221,18 @@ class Loader_Negative:
             # if len(set(context_batch[batch_idx])& set(neg_batch[batch_idx]) ) > 0:
             #     print('context in neg')
 
-
-            
             batch_idx += 1
             if batch_idx == batch_size:
                 neg_batch = self.sample_neg_batch(batch_size, n_negatives)
-                yield np.array(target_batch), np.array(context_batch), np.array(neg_batch)
+                target_batch = np.array(target_batch)
+                context_batch = np.array(context_batch)
+                
+                if self.shuffle:
+                    # Shuffle the batch.
+                    indices = np.random.permutation(len(target_batch))
+                    target_batch = target_batch[indices]
+                    context_batch = context_batch[indices]
+                    neg_batch = neg_batch[indices]
+
+                yield target_batch, context_batch, neg_batch
                 batch_idx = 0
